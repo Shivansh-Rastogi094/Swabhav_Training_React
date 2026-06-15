@@ -1,128 +1,112 @@
-import React, { useState } from 'react';
-import { readStudents } from '../service/StudentService';
-import { readCourseById } from '../service/CourseService';
+import React, { useState } from "react";
+import { readStudents } from "../service/StudentService";
+import { readCourseById } from "../service/CourseService";
 
 const Data = () => {
   const [userData, setUserData] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [full_name,setFull_name] = useState("");
+  const [full_name, setFull_name] = useState("");
   const [showCourses, setShowCourses] = useState(false);
   const [showCoursesDetail, setShowCoursesDetail] = useState(false);
-  const [coursesDetail, setCoursesDetail] = useState();
-  const [showData, setShowData] = useState(false);
+  const [coursesDetail, setCoursesDetail] = useState(null);
 
   const handleReadData = async () => {
     const response = await readStudents();
-    console.log(response);
     setUserData(response);
-    setShowData(true);
   };
 
   const handleViewCourses = (user) => {
     setCourses(user.courses);
-    setFull_name(user.full_name)
+    setFull_name(user.full_name);
     setShowCourses(true);
-  }
+    setShowCoursesDetail(false);
+  };
 
-  const handleViewCourseDetail =async(course)=>{
-    const response =await readCourseById(course.id);
-    console.log(response);
+  const handleViewCourseDetail = async (course) => {
+    const response = await readCourseById(course.id);
     setCoursesDetail(response);
     setShowCoursesDetail(true);
-  }
+  };
 
   return (
-    <div>
-      <button onClick={handleReadData}>Read Data</button>
-      { showData && (
+    <div className="data-page">
+      <div className="header">
+        <h1>Student Management Dashboard</h1>
+        <button className="primary-btn" onClick={handleReadData}>
+          Load Students
+        </button>
+      </div>
+
+      {userData.length > 0 && (
         <>
-        <div className="table-container">
-          <table className="employee-table">
-            <thead>
-              <tr>
-                <th>Sr no.</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Age</th>
-                <th>Courses</th>
-              </tr>
-            </thead>
+          <h2 className="section-title">Students</h2>
 
-            <tbody>
-              {userData.map((user, index) => (
-                <tr key={index}>
-                  <td>{index+1}</td>
-                  <td>{user.full_name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.age}</td>
-                  <td><button onClick={()=>{handleViewCourses(user)}}>View Courses</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="student-grid">
+            {userData.map((user, index) => (
+              <div className="student-card" key={index}>
+                <div className="student-avatar">
+                  {user.full_name.charAt(0)}
+                </div>
 
-             {showCourses > 0 && (
-                <>
-                  <h2>{full_name}'s Courses</h2>
+                <div className="student-info">
+                  <h3>{user.full_name}</h3>
+                  <p>Email : {user.email}</p>
+                  <p>Age: {user.age}</p>
+                </div>
 
-                  <table className="employee-table">
-                    <thead>
-                      <tr>
-                        <th>Sr no.</th>
-                        <th>Course Name</th>
-                        <th>Course Details</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {courses.map((course, index) => (
-                        <tr key={index+1}>
-                          <td>{course.id}</td>
-                          <td>{course.course_name}</td>
-
-                          <td>
-                            <button
-                              onClick={() =>
-                                handleViewCourseDetail(course)
-                              }
-                            >
-                              View Course Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {showCoursesDetail && (
-                    <>
-                      <h2>{coursesDetail.course_name}'s Details</h2>
-                      <table className="employee-table">
-                        <thead>
-                          <tr>
-                            <th>Course Name</th>
-                            <th>Course Code</th>
-                            <th>Course Fess</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr>
-                              <td>{coursesDetail.course_name}</td>
-                              <td>{coursesDetail.course_code}</td>
-                              <td>{coursesDetail.fees}</td>
-                
-                            </tr>
-                        </tbody>
-                      </table>    
-                  </>
-                  )}
-                </>
-              )}
-
-        </div>
+                <button
+                  className="secondary-btn"
+                  onClick={() => handleViewCourses(user)}
+                >
+                  View Courses
+                </button>
+              </div>
+            ))}
+          </div>
         </>
-        )}
+      )}
+
+      {showCourses && (
+        <div className="panel">
+          <h2>{full_name}'s Courses</h2>
+
+          <div className="course-grid">
+            {courses.map((course) => (
+              <div className="course-card" key={course.id}>
+                <h3>{course.course_name}</h3>
+
+                <button
+                  className="secondary-btn"
+                  onClick={() => handleViewCourseDetail(course)}
+                >
+                  View Details
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showCoursesDetail && coursesDetail && (
+        <div className="detail-card">
+          <h2>{coursesDetail.course_name} Details</h2>
+
+          <div className="detail-row">
+            <span>Course Name</span>
+            <strong>{coursesDetail.course_name}</strong>
+          </div>
+
+          <div className="detail-row">
+            <span>Course Code</span>
+            <strong>{coursesDetail.course_code}</strong>
+          </div>
+
+          <div className="detail-row">
+            <span>Fees</span>
+            <strong>₹ {coursesDetail.fees}</strong>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
