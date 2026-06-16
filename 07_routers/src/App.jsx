@@ -13,24 +13,20 @@ import Login from './Pages/Login'
 import ProfileDetails from './Components/ProfileDetails'
 import New from './Pages/New'
 import Old from './Pages/Old'
+import AdminDashboard from './Pages/AdminDashboard'
+import AgentDashboard from './Pages/AgentDashboard'
+import UserDashboard from './Pages/UserDashboard'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
-      <Navbar/>
-
       <Routes>
-        <Route path="/" element={<Login/>}></Route>
-        <Route path="/home" element={<Home/>}></Route>
-        <Route path="/aboutus" element={<AboutUs/>}>
-        <Route path='new' element={<New/>}></Route>
-        <Route path='old' element={<Old/>}></Route>
-        </Route>
-        {/* <Route path="/profile" element={<Profile/>}></Route> */}
-        <Route path="/profile" element={<ProfileDetails/>}></Route>
-        <Route path="*" element={<NotFound/>}></Route>
+        <Route path='/' element={<Login/>}></Route>
+        <Route path='/admindashboard' element={<AdminDashboard/>}></Route>
+        <Route path='/agentdashboard' element={<AgentDashboard/>}></Route>
+        <Route path='/userdashboard' element={<UserDashboard/>}></Route>
       </Routes>
     </>
   )
