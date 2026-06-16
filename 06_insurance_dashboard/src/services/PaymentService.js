@@ -2,10 +2,10 @@ import api from "../api/api";
 
 export const token ="eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBpbnN1cmFuY2UuY29tIiwiaWF0IjoxNzgxNTk4NTMzLCJleHAiOjE3ODE2ODQ5MzN9.VfRV1ctkmIMIHyeuAb6cGgWrwTVbnOR0li3jI4GiFy06eUVq0F5Di7nFHEXdd3-q";
 
-export const readAllClaims=async()=>{
+export const readAllPayments=async()=>{
     try{
-
-        const response = await api.get(`claims`,{
+        
+        const response = await api.get(`payments`,{
             headers: {
                 Authorization: `Bearer ${token}`,
             }

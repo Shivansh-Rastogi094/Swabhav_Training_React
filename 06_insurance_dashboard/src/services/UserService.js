@@ -1,6 +1,6 @@
 import api from "../api/api";
 
-const token ="eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBpbnN1cmFuY2UuY29tIiwiaWF0IjoxNzgxNTIwODA5LCJleHAiOjE3ODE2MDcyMDl9.7WUm5LNezSIWmRWinvO4bwfWE74hr2Z4cyl41MrcH6Uzt2LB2gywklEg0m4E-o2k";
+ const token ="eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBpbnN1cmFuY2UuY29tIiwiaWF0IjoxNzgxNTk4NTMzLCJleHAiOjE3ODE2ODQ5MzN9.VfRV1ctkmIMIHyeuAb6cGgWrwTVbnOR0li3jI4GiFy06eUVq0F5Di7nFHEXdd3-q";
 
 export const readAllUsers=async()=>{
     try{
