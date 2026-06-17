@@ -17,3 +17,13 @@ export const readAllClaims=async()=>{
         console.log(err);
     }
 }
+
+export const readMyClaims = async()=>{
+    try {
+        const respone = await api.get(`claims/my`)
+        return respone.data;
+    } catch (error) {
+        console.log(error);
+        
+    }
+}

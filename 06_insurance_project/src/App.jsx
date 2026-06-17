@@ -3,9 +3,10 @@ import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
-import Dashboard from './pages/Dashboard'
+import AdminDashboard from './pages/AdminDashboard'
 import { Routes,Route } from 'react-router-dom'
 import Login from "./pages/Login"
+import UserDashboard from './pages/UserDashboard'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -15,7 +16,8 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<Login setUserData={setUserData}/>}></Route>
-        <Route path="/admindashboard" element={<Dashboard userData={userData}/>}></Route>
+        <Route path="/admindashboard" element={<AdminDashboard userData={userData}/>}></Route>
+        <Route path="/userdashboard" element={<UserDashboard userData={userData}/>}></Route>
       </Routes>
     </>
   )

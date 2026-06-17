@@ -46,6 +46,8 @@ const Login = ({ setUserData }) => {
 
     try {
       const response = await LoginService(user);
+      console.log(response.data);
+      
       setUserData(response.data)
 
       localStorage.setItem("token", response.data.token);

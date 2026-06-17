@@ -251,7 +251,8 @@ const Dashboard = ({ userData }) => {
               0
               );
         
-
+      console.log(userData);
+      
       setTotalPayments(payments);
       setTotalClaims(claims);
       setUsers(userRes.data.content.length);
@@ -285,7 +286,7 @@ const Dashboard = ({ userData }) => {
           </div>
 
           <div className="header">
-            <h2>Insurance Management</h2>
+            <h2>Good Morning, {userData?.fullName || "Admin"} 👋</h2>
             <p>Overview of your current system metrics</p>
           </div>
 

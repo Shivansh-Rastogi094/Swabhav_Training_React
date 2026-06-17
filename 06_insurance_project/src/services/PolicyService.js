@@ -17,3 +17,13 @@ export const readAllPolicies=async()=>{
         console.log(err);
     }
 }
+
+
+export const readMyPolicies=async()=>{
+    try {    
+        const response = await api.get(`policies/my`)
+        return response.data
+    } catch (error) {
+        console.log(error);
+    }
+}
