@@ -2,7 +2,9 @@
 
 ## Overview
 
-A multi-role web application for managing insurance policies, products, plans, payments, claims, and claim histories. Three distinct user roles — **User (Policyholder)**, **Agent**, and **Admin** — each operate within tailored dashboards with scoped access and responsibilities.
+A multi-role web application for managing insurance policies, products, plans, payments, claims, and claim histories. Three distinct user roles — **Customer (Policyholder)**, **Agent**, and **Admin** — each operate within tailored dashboards with scoped access and responsibilities.
+
+This frontend is designed to consume a Java Spring Boot REST API backend secured via stateless JWT tokens.
 
 ---
 
@@ -60,12 +62,11 @@ Topbar Height:  60px
 
 | Status | Color | Usage |
 |---|---|---|
-| `ACTIVE` | `--success` | Active policy / approved claim |
-| `PENDING` | `--warning` | Under review, awaiting payment |
-| `REJECTED` | `--danger` | Rejected claim / cancelled policy |
+| `ACTIVE` / `SUCCESS` | `--success` | Active policy, approved claim, successful payment |
+| `PENDING` / `SUBMITTED` / `UNDER_REVIEW` | `--warning` | Under review, awaiting action |
+| `REJECTED` / `CANCELLED` | `--danger` | Rejected claim, cancelled policy |
 | `EXPIRED` | `--text-secondary` | Lapsed policies |
-| `PROCESSING` | `--primary-light` | Payment or claim in progress |
-| `DRAFT` | `--border` | Unsaved / incomplete records |
+| `PROCESSING` / `RECOMMENDED` | `--primary-light` | Claim processing or recommended by agent |
 
 ---
 
@@ -90,14 +91,13 @@ Topbar Height:  60px
 
 ### 2.2 Sidebar Navigation per Role
 
-**User (Policyholder)**
+**Customer (Policyholder)**
 ```
  Dashboard
  My Policies
  Products & Plans
  Payments
  My Claims
- Claim History
  Profile
 ```
 
@@ -109,23 +109,18 @@ Topbar Height:  60px
  Products & Plans
  Payments
  Claims
- Claim History
- Reports
  Profile
 ```
 
 **Admin**
 ```
  Dashboard
- Users
- Agents
- Products
- Plans
- Policies
- Payments
- Claims
- Claim History
- Reports & Analytics
+ Users (Activate/Deactivate, Create Agents)
+ Products (Manage)
+ Plans (Manage)
+ Policies (All)
+ Payments (All)
+ Claims (All & Decision)
  Settings
 ```
 
@@ -133,12 +128,11 @@ Topbar Height:  60px
 
 ## 3. Dashboards
 
-### 3.1 User Dashboard
+### 3.1 Customer Dashboard
 
 **Purpose:** Give the policyholder an instant health-check of their policies, upcoming renewals, and open claims.
 
 **Layout:**
-
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Good morning, Shivansh 👋                 [+ Buy Policy]   │
@@ -152,464 +146,311 @@ Topbar Height:  60px
 │ [Policy Card × 3 with status]     │ [Claim row × 3]          │
 ├───────────────────────────────────┴──────────────────────────┤
 │ Upcoming Premium Payments (timeline strip)                    │
-└──────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────-──────┘
 ```
 
-**Stat Cards:** Active Policies | Pending Claims | Total Annual Premium | Next Renewal Date
-
-**Sections:**
-- My Policies — compact card list with policy name, type, status badge, expiry date, and quick-action (View / Renew)
-- Recent Claims — last 3 claim entries with claim ID, amount, status badge
-- Upcoming Payments — horizontal timeline showing payment due dates for next 60 days
+*Note: Since there is no backend `/api/dashboard` endpoint, the counts, sums, and timelines are calculated client-side by fetching the customer's policies (`GET /api/policies/my`), claims (`GET /api/claims/my`), and payments (`GET /api/payments/my`).*
 
 ---
 
 ### 3.2 Agent Dashboard
 
-**Purpose:** Give the agent a productivity view: how many clients they manage, policy conversion, claims they're tracking.
+**Purpose:** Give the agent a productivity view: clients they manage, policies issued, and claims awaiting their recommendation/review.
 
-**Layout:**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Agent Portal — Rajesh Kumar         [+ Add Client]             │
-├──────────┬─────────────┬────────────┬───────────────────────────┤
-│  Clients │ Policies    │ Claims     │ Monthly Commission         │
-│    24    │ Managed: 61 │ Open: 8    │ ₹12,400                   │
-├──────────┴─────────────┴────────────┴───────────────────────────┤
-│  Recent Client Activity               │ Claims Requiring Action  │
-│  ────────────────────────             │ ──────────────────────── │
-│  [Client rows: name, policy, status]  │ [Claim rows with urgency]│
-├───────────────────────────────────────┴─────────────────────────┤
-│  Policy Expiry Alerts (next 30 days)                            │
-│  [Scrollable horizontal cards of soon-expiring policies]        │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Stat Cards:** Total Clients | Policies Managed | Open Claims | Monthly Commission
-
-**Sections:**
-- Recent Client Activity — table of clients with last action, policy status
-- Claims Requiring Action — sorted by urgency; shows claim ID, client name, days pending
-- Policy Expiry Alerts — strip of soon-expiring policies with "Notify Client" quick action
+*Note: Counts and client activities are computed client-side by querying `/api/customers`, `/api/policies`, and `/api/claims`.*
 
 ---
 
 ### 3.3 Admin Dashboard
 
-**Purpose:** System-wide analytics, operational health, revenue, and management controls.
+**Purpose:** System-wide analytics, operational health, and quick stats.
 
-**Layout:**
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│  Admin Overview              Period: [This Month ▼]   [Export]     │
-├──────────┬──────────┬──────────┬──────────┬────────────────────────┤
-│  Users   │  Agents  │ Policies │  Claims  │ Revenue                │
-│  1,204   │    38    │  3,490   │   142    │ ₹2.4 Cr               │
-├──────────┴──────────┴──────────┴──────────┴────────────────────────┤
-│  Revenue Trend (Line Chart)     │  Claims by Status (Donut Chart)  │
-│  ──────────────────────────     │  ────────────────────────────    │
-│  [Monthly premium income line]  │  [Pie: Approved/Pending/Rejected]│
-├─────────────────────────────────┴──────────────────────────────────┤
-│  Recent Registrations          │  Flagged Claims                   │
-│  ─────────────────────────     │  ─────────────────────────────    │
-│  [New users/agents this week]  │  [High-value or suspicious claims]│
-└────────────────────────────────────────────────────────────────────┘
-```
-
-**Stat Cards:** Total Users | Active Agents | Total Policies | Open Claims | Monthly Revenue
-
-**Charts:**
-- Revenue Trend — 12-month line chart (premium collected vs claims paid out)
-- Claims Distribution — donut chart by status (Approved / Pending / Rejected / Processing)
-- Policy Type Breakdown — bar chart by product category
-
-**Sections:**
-- Recent Registrations — new users/agents with role, date, status
-- Flagged Claims — high-value or anomaly-detected claims needing admin review
+*Note: System-wide metrics are calculated client-side by aggregating data from `GET /api/users`, `GET /api/products`, `GET /api/policies`, `GET /api/payments`, and `GET /api/claims`.*
 
 ---
 
-## 4. Screen Designs
+## 4. Screen Designs & Features
 
 ### 4.1 Products Screen
 
-**Accessible by:** Admin (CRUD), Agent (Read), User (Browse & Buy)
-
-**Purpose:** Catalog of insurance product categories (Health, Life, Motor, Travel, etc.)
+*   **Accessible by:** Admin (CRUD), Agent (Read), Customer (Browse)
+*   **Endpoints:**
+    *   `GET /api/products?page=0&size=10` (All roles)
+    *   `POST /api/products` (Admin only)
+    *   `PUT /api/products/{id}` (Admin only)
+    *   `PUT /api/products/{id}/deactivate` (Admin only)
 
 **Layout:**
-
 ```
-Products                                         [+ Add Product]  (Admin only)
+Products Screen
 ─────────────────────────────────────────────────────────────────────────────
-Search: [___________________]   Filter: [Category ▼]  [Status ▼]
+Search: [___________________]   Filter: [Category ▼]  [Status ▼]  [+ Add Product] (Admin)
 
-┌─────────────────────┐  ┌─────────────────────┐  ┌──────────────────────┐
-│  🏥 Health Insurance│  │  🚗 Motor Insurance  │  │  ✈️ Travel Insurance  │
-│  ─────────────────  │  │  ─────────────────   │  │  ─────────────────── │
-│  12 Plans Available │  │  8 Plans Available   │  │  5 Plans Available   │
-│  From ₹3,000/yr     │  │  From ₹5,500/yr      │  │  From ₹800/trip      │
-│  [ACTIVE]           │  │  [ACTIVE]            │  │  [ACTIVE]            │
-│  [View Plans]       │  │  [View Plans]        │  │  [View Plans]        │
-└─────────────────────┘  └─────────────────────┘  └──────────────────────┘
+┌────────────────────────┐  ┌────────────────────────┐  ┌────────────────────────┐
+│  🏥 Health Insurance   │  │  🚗 Motor Insurance    │  │  ✈️ Travel Insurance    │
+│  ───────────────────   │  │  ───────────────────   │  │  ───────────────────   │
+│  Active Offerings      │  │  Active Offerings      │  │  Active Offerings      │
+│  [ACTIVE]              │  │  [ACTIVE]              │  │  [ACTIVE]              │
+│  [View Plans] [Deact]  │  │  [View Plans] [Deact]  │  │  [View Plans] [Deact]  │
+└────────────────────────┘  └────────────────────────┘  └────────────────────────┘
 ```
-
-**Fields (Admin Create/Edit):**
-- Product Name, Category (dropdown), Description, Status (Active/Inactive), Cover Image, Tags
 
 ---
 
 ### 4.2 Plans Screen
 
-**Accessible by:** Admin (CRUD), Agent (Read + Recommend), User (Browse & Compare)
-
-**Purpose:** List of specific plans under each product, with coverage details and pricing.
+*   **Accessible by:** Admin (CRUD), Agent (Read), Customer (Browse & Compare)
+*   **Endpoints:**
+    *   `GET /api/plans?page=0&size=10` (All roles)
+    *   `GET /api/plans/{id}` (All roles)
+    *   `POST /api/plans` (Admin only)
+    *   `PUT /api/plans/{id}` (Admin only)
+    *   `PUT /api/plans/{id}/deactivate` (Admin only)
 
 **Layout:**
-
 ```
-Plans — Health Insurance                          [+ Add Plan]  (Admin only)
-───────────────────────────────────────────────────────────────────────────
-← Back to Products
+Plans Catalog — Health Insurance
+─────────────────────────────────────────────────────────────────────────────
+← Back to Products                     Filter: [Sum Insured ▼]   [+ Add Plan] (Admin)
 
-Filter: [Sum Insured ▼]  [Premium Range ▼]  [Tenure ▼]
-
- Plan Name            Sum Insured    Premium/yr    Tenure    Status    Actions
- ─────────────────────────────────────────────────────────────────────────────
- Health Shield Basic  ₹3,00,000      ₹3,200        1 yr     ACTIVE    [View] [Edit]
- Health Shield Pro    ₹10,00,000     ₹7,800        1/2/3 yr ACTIVE    [View] [Edit]
- Health Shield Elite  ₹25,00,000     ₹14,500       1/3/5 yr ACTIVE    [View] [Edit]
- Senior Care Plus     ₹5,00,000      ₹11,200       1 yr     ACTIVE    [View] [Edit]
-```
-
-**Plan Detail Drawer / Modal:**
-- Plan Name, Product, Sum Insured, Premium Breakdown, Coverage Details (rich text), Exclusions, Eligibility Criteria, Tenure Options, Riders Available
-
-**User View — Plan Comparison:**
-```
-[Compare Plans] → side-by-side table of selected plans (max 3)
-Columns: Coverage / Exclusions / Premium / Claim Process / Ratings
-[Buy Now] button per plan
+┌──────────────────────────────────┐  ┌──────────────────────────────────┐
+│  ⭐ Health Shield Pro             │  │  💎 Health Shield Elite          │
+│  ──────────────────────────────  │  │  ──────────────────────────────  │
+│  Coverage: ₹10,00,000            │  │  Coverage: ₹25,00,000            │
+│  Premium: ₹7,800/yr (ANNUAL)     │  │  Premium: ₹14,500/yr (ANNUAL)    │
+│  Duration: 20 years              │  │  Duration: 25 years              │
+│  Status: ACTIVE                  │  │  Status: ACTIVE                  │
+│                                  │  │                                  │
+│  [Compare [ ] ]   [Buy Now]      │  │  [Compare [ ] ]   [Buy Now]      │
+└──────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
 ---
 
 ### 4.3 Policies Screen
 
-**Accessible by:** Admin (all), Agent (assigned clients), User (own policies)
+*   **Accessible by:** Customer (Own only), Agent (Assigned clients/All), Admin (All)
+*   **Endpoints:**
+    *   `POST /api/policies/purchase` (Customer payload: `{ planId, startDate }`)
+    *   `POST /api/policies/issue` (Admin/Agent payload: `{ customerId, planId, startDate }`)
+    *   `GET /api/policies/my?page=0&size=10` (Customer list)
+    *   `GET /api/policies?page=0&size=10` (Admin/Agent list)
+    *   `GET /api/policies/{id}` (Details view)
+    *   `PUT /api/policies/{id}/cancel` (Admin/Agent cancel action)
 
-**Purpose:** Manage issued insurance policies, view policy details, renew, or cancel.
-
-**Layout:**
-
+**Layout - Customer Policy Listing:**
 ```
 My Policies                                              [+ Buy New Policy]
-──────────────────────────────────────────────────────────────────────────
-Search: [_______________________]   Filter: [Type ▼]  [Status ▼]
+─────────────────────────────────────────────────────────────────────────────
+Search ID: [_______________]  Filter: [Status ▼]
 
- Policy No.        Product           Plan            Start       Expiry     Status     Actions
- ──────────────────────────────────────────────────────────────────────────────────────────────
- POL-2024-00182   Health Insurance  Shield Pro      01 Jan 24   31 Dec 24  ACTIVE     [View] [Renew]
- POL-2024-00091   Motor Insurance   Comprehensive   15 Mar 24   14 Mar 25  ACTIVE     [View]
- POL-2023-00340   Travel Insurance  World Cover     01 Oct 23   30 Sep 23  EXPIRED    [View] [Rebuy]
+┌───────────────────────────────────────────────────────────────────────────┐
+│ Policy: POL-2026-00182  •  Health Shield Pro                              │
+│ ───────────────────────────────────────────────────────────────────────── │
+│ Coverage: ₹10,00,000     Premium: ₹7,800/yr (ANNUAL)                      │
+│ Start Date: 01 Jul 2026  Expiry Date: 30 Jun 2027                         │
+│ Status: [ACTIVE]         Actions: [View Details] [File Claim] [Pay Premium]│
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Policy Detail View:**
-
+**Layout - Detailed Policy Summary View:**
 ```
-Policy: POL-2024-00182                                  [Download PDF]  [Renew]
-────────────────────────────────────────────────────────────────────────────
-┌──────────────────────────────┬─────────────────────────────────────────┐
-│  Policy Summary              │  Policyholder Details                   │
-│  ──────────────────────────  │  ───────────────────────────────────── │
-│  Product: Health Insurance   │  Name: Shivansh Gupta                  │
-│  Plan: Health Shield Pro     │  DOB: 12 Aug 2002                      │
-│  Sum Insured: ₹10,00,000     │  Nominee: Chetna Sharma                │
-│  Premium: ₹7,800/yr          │  Relation: Partner                     │
-│  Start: 01 Jan 2024          │                                         │
-│  Expiry: 31 Dec 2024         │                                         │
-│  Status: [ACTIVE]            │                                         │
-├──────────────────────────────┴─────────────────────────────────────────┤
-│  Coverage Details    │  Exclusions    │  Documents    │  Claim History  │
-│  (tab navigation)                                                       │
-└─────────────────────────────────────────────────────────────────────────┘
+Policy Details: POL-2026-00182                         [Download PDF] [Cancel]
+─────────────────────────────────────────────────────────────────────────────
+┌──────────────────────────────────────┬────────────────────────────────────┐
+│ 🛡️ Plan Coverage Info                 │ 👤 Policyholder Details            │
+│ ──────────────────────────────────── │ ────────────────────────────────── │
+│ Product: Health Insurance            │ Name: Shivansh Gupta               │
+│ Plan Name: Health Shield Pro         │ DOB: 12 Aug 2002                   │
+│ Sum Insured: ₹10,00,000              │ Address: 123 Main Street           │
+│ Premium Amount: ₹7,800               │ City: Scranton, PA                 │
+│ Billing Schedule: ANNUAL             │ Nominee: Carol Vance               │
+│ Status: ACTIVE                       │ Nominee Relation: Spouse           │
+└──────────────────────────────────────┴────────────────────────────────────┘
 ```
 
 ---
 
 ### 4.4 Payments Screen
 
-**Accessible by:** Admin (all), Agent (view for clients), User (own payments)
+*   **Accessible by:** Customer (Own list & Record), Agent (View list), Admin (All list & Record)
+*   **Endpoints:**
+    *   `POST /api/payments` (Record payment: `{ policyId, amount, paymentMode, transactionReference, paymentStatus }`)
+    *   `GET /api/payments/my?page=0&size=10` (Customer history)
+    *   `GET /api/payments?page=0&size=10` (Admin/Agent history)
+    *   `GET /api/payments/policy/{policyId}` (Policy specific list)
 
-**Purpose:** View payment history, make premium payments, download receipts.
-
-**Layout:**
-
+**Layout - Payments Listing:**
 ```
-Payments                                              [+ Make Payment]  (User)
+Payment Transactions
 ─────────────────────────────────────────────────────────────────────────────
-Filter: [Policy ▼]  [Status ▼]  [Date Range: _____ to _____]
+Filter: [Policy ▼]  [Status ▼]                       Total Premium Paid: ₹20,200
 
- Payment ID      Policy No.       Amount     Date          Mode     Status     Actions
- ────────────────────────────────────────────────────────────────────────────────────────
- PAY-2024-0082   POL-2024-00182  ₹7,800     01 Jan 2024   UPI      SUCCESS    [Receipt]
- PAY-2024-0031   POL-2024-00091  ₹12,400    15 Mar 2024   NetBkg   SUCCESS    [Receipt]
- PAY-2024-0110   POL-2024-00182  ₹7,800     01 Jan 2025   —        PENDING    [Pay Now]
+ Transaction ID   Policy No.      Amount    Date Paid    Payment Mode    Status
+ ────────────────────────────────────────────────────────────────────────────
+ TXN_REF_00182    POL-2026-00182  ₹7,800    01 Jul 2026  UPI             SUCCESS
+ TXN_REF_00091    POL-2026-00091  ₹12,400   15 Mar 2026  NetBanking      SUCCESS
 ```
 
-**Payment Flow (User):**
-
+**Layout - Make/Record Payment Form Modal:**
 ```
-Step 1: Select Policy       → dropdown of active/renewal-due policies
-Step 2: Confirm Amount      → auto-filled premium + tax breakdown
-Step 3: Choose Method       → UPI / Net Banking / Credit Card / Debit Card
-Step 4: Confirm & Pay       → redirect to payment gateway
-Step 5: Success Screen      → confetti + receipt download + email confirmation
-```
+Make Premium Payment
+─────────────────────────────────────────────────────────────────────────────
+Select Policy:      [POL-2026-00182 — Health Shield Pro ▼]
+Premium Amount:     ₹7,800.00 (Autofilled)
 
-**Payment Detail Modal:**
-- Payment ID, Policy No., Plan, Premium Amount, GST (18%), Total Paid, Payment Date, Mode, Transaction Reference, Status, [Download Receipt]
+Choose Payment Mode:
+(●) UPI (GPay/PhonePe)   ( ) Debit/Credit Card   ( ) Net Banking
+
+Transaction Reference:  [TXN123456789              ] (Enter simulated ID)
+Payment Status Check:   (●) SUCCESS             ( ) FAILED
+
+                                          [Cancel] [Record Payment Receipt]
+```
 
 ---
 
 ### 4.5 Claims Screen
 
-**Accessible by:** Admin (all), Agent (assigned clients), User (raise + track own)
+*   **Accessible by:** Customer (Raise & View), Agent (Review), Admin (Decision)
+*   **Endpoints:**
+    *   `POST /api/claims` (Multipart upload: `"claim"` metadata JSON part + `"files"` list part)
+    *   `GET /api/claims/my?page=0&size=10` (Customer claims)
+    *   `GET /api/claims?page=0&size=10` (Admin/Agent claims)
+    *   `PUT /api/claims/{id}/review` (Agent recommendation payload)
+    *   `PUT /api/claims/{id}/decision` (Admin final decision payload)
 
-**Purpose:** Submit new claims, track status, upload supporting documents.
-
-**Layout:**
-
+**Layout - File Claim Form (Multipart Upload):**
 ```
-My Claims                                              [+ Raise Claim]
-───────────────────────────────────────────────────────────────────────
-Search: [__________________]   Filter: [Policy ▼]  [Status ▼]  [Type ▼]
+Raise New Insurance Claim
+─────────────────────────────────────────────────────────────────────────────
+Select Active Policy*:   [POL-2026-00182 — Health Shield Pro ▼]
+Claimed Amount*:         [₹ 12,500       ]
+Incident Date*:          [20-05-2026     ]
+Claim Reason*:           [Hospitalization due to seasonal flu _________]
 
- Claim ID         Policy No.       Type         Amount Claimed   Date        Status        Actions
- ─────────────────────────────────────────────────────────────────────────────────────────────────
- CLM-2024-00042   POL-2024-00182   Cashless     ₹45,000         12 Mar 24   APPROVED      [View]
- CLM-2024-00078   POL-2024-00182   Reimbursement ₹12,500        20 May 24   PENDING       [View] [Update]
- CLM-2024-00091   POL-2024-00091   Third Party  ₹80,000         02 Jun 24   PROCESSING    [View]
-```
+Upload Supporting Bills/Reports (Max 5MB each)*:
+[Choose Files] 📄 Medical_Bill.pdf, 📄 Doctor_Prescription.png
 
-**Raise Claim Form:**
-
-```
-Raise New Claim
-────────────────────────────────────────────────────────────────
-Select Policy*:      [POL-2024-00182 — Health Shield Pro ▼]
-Claim Type*:         [Cashless ▼ / Reimbursement / Third-Party]
-Incident Date*:      [Date Picker]
-Incident Description*: [Textarea — min 50 chars]
-Claimed Amount*:     [₹ ____________]
-Hospital / Garage:   [_______________] (context-dependent)
-Supporting Documents: [Upload: PDF/JPG max 5MB each]
-  → Medical bills, discharge summary, FIR, repair estimate, etc.
-
-[Save as Draft]    [Submit Claim →]
+                                               [Save Draft] [Submit Claim →]
 ```
 
-**Claim Detail View:**
-
+**Layout - Detailed Claim Status & Review Center:**
 ```
-Claim: CLM-2024-00078                                [Download Claim Form]
-────────────────────────────────────────────────────────────────────────
-Status Timeline:
-  [●] Submitted → [●] Under Review → [○] Decision → [○] Settlement
+Claim Assessment: CLM-2026-00078
+─────────────────────────────────────────────────────────────────────────────
+Workflow Timeline:
+[●] Filed (20 May) ───► [●] Agent Reviewed (22 May) ───► [○] Admin Approved (Pending)
 
-┌──────────────────────────────┬─────────────────────────────────────────┐
-│  Claim Summary               │  Documents Submitted                    │
-│  ──────────────────          │  ───────────────────────────────────── │
-│  Policy: POL-2024-00182      │  📄 Medical_Bill.pdf          [View]   │
-│  Type: Reimbursement         │  📄 Discharge_Summary.pdf     [View]   │
-│  Amount: ₹12,500             │  📄 Lab_Reports.pdf           [View]   │
-│  Date: 20 May 2024           │                                [+ Add] │
-│  Assigned Agent: Rajesh K.   │                                         │
-├──────────────────────────────┴─────────────────────────────────────────┤
-│  Admin / Agent Notes (if any)                                          │
-│  "Awaiting discharge summary from hospital. Reminder sent."            │
-└─────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────┬────────────────────────────────────┐
+│ Summary Details                      │ Submitted Documents                │
+│ ──────────────────                   │ ───────────────────                │
+│ Claimed Amount: ₹12,500              │ 📄 Medical_Bill.pdf       [View]   │
+│ Reason: Hospitalization (flu)        │ 📄 Discharge_Summary.pdf  [View]   │
+│ Policy ID: POL-2026-00182            │                                    │
+│ Agent Recommendation: RECOMMENDED    │ Agent Remarks:                     │
+│ Recommended Date: 22 May 2026        │ "Verified. Eligible for payout."   │
+└──────────────────────────────────────┴────────────────────────────────────┘
+[Agent Box] Recommended Status: [RECOMMENDED ▼]  Remarks: [________________] [Submit]
+[Admin Box] Final Decision:     [APPROVED ▼]     Remarks: [________________] [Submit]
 ```
 
 ---
 
-### 4.6 Claim History Screen
+### 4.6 Profile Screen
 
-**Accessible by:** Admin (all), Agent (assigned clients), User (own history)
+*   **Accessible by:** All users
+*   **Endpoints:**
+    *   `GET /api/customers/profile` (Customer own)
+    *   `POST /api/customers` (Create customer profile)
+    *   `PUT /api/customers/{id}` (Update customer profile)
 
-**Purpose:** Full audit trail of all past claims with settlement details.
-
-**Layout:**
-
+**Layout - Profile View & Update Form:**
 ```
-Claim History                                          [Export CSV]
-─────────────────────────────────────────────────────────────────────
-Filter: [Year ▼]  [Policy ▼]  [Status ▼]   Search: [Claim ID / Policy]
-
- Claim ID          Policy            Type           Claimed    Approved   Status     Settled On
- ────────────────────────────────────────────────────────────────────────────────────────────────
- CLM-2024-00042    Health Shield Pro  Cashless       ₹45,000    ₹43,200   APPROVED   15 Mar 2024
- CLM-2023-00118    Health Shield Pro  Reimbursement  ₹8,200     ₹7,500    APPROVED   09 Nov 2023
- CLM-2023-00055    Health Shield Pro  Reimbursement  ₹3,000     —         REJECTED   22 Aug 2023
- CLM-2022-00210    Motor Compreh.     Own Damage     ₹32,000    ₹28,500   APPROVED   10 Dec 2022
+My Profile Settings
+─────────────────────────────────────────────────────────────────────────────
+┌──────────────────────────────────────┬────────────────────────────────────┐
+│ 👤 Account Credentials               │ 📝 Personal Customer Details       │
+│ ─────────────────────                │ ───────────────────────────        │
+│ Full Name: Shivansh Gupta            │ Date of Birth*:   [12-08-2002  ]   │
+│ Email Address: shivansh@insurance.com│ Address*:         [123 Main St ]   │
+│ Phone Number:  +91 98765 43210       │ City*:            [Scranton    ]   │
+│ Security Status: ACTIVE              │ State*: [PA ▼]  PinCode*: [18503 ] │
+│ Role Group: CUSTOMER                 │ Nominee Name*:    [Carol Vance ]   │
+│                                      │ Nominee Relation*:[Spouse      ]   │
+└──────────────────────────────────────┴────────────────────────────────────┘
+                                                      [Discard] [Save Profile]
 ```
-
-**Claim History Detail Side Panel:**
-
-Clicking any row opens a right slide-in panel with:
-- Full timeline of status changes with timestamps
-- Agent notes at each stage
-- Documents submitted and decisions
-- Rejection reason (if applicable)
-- Settlement breakdown (approved amount, deductions, TDS)
-
-**Admin/Agent Extended View:**
-- Additional column: Assigned Agent, Processing Time (days), SLA breach indicator
-- Bulk export with date range
-- Audit log tab per claim
 
 ---
 
 ## 5. Role-Based Access Control (RBAC) Summary
 
-| Screen / Action | User | Agent | Admin |
+| Screen / Action | Customer | Agent | Admin |
 |---|---|---|---|
-| View own dashboard | ✅ | ✅ | ✅ |
-| View products | ✅ Read | ✅ Read | ✅ CRUD |
-| View plans | ✅ Read | ✅ Read | ✅ CRUD |
-| View policies | ✅ Own only | ✅ Assigned clients | ✅ All |
-| Buy / issue policy | ✅ Self | ✅ For client | ✅ |
-| View payments | ✅ Own only | ✅ Assigned clients | ✅ All |
-| Make payment | ✅ Own | — | ✅ Manual |
-| Raise claim | ✅ Own | — | ✅ |
-| Update claim | ✅ Own (pre-review) | ✅ Assigned | ✅ All |
-| Approve / reject claim | ❌ | ❌ | ✅ |
-| View claim history | ✅ Own | ✅ Assigned clients | ✅ All |
-| Manage users | ❌ | ❌ | ✅ |
-| Manage agents | ❌ | ❌ | ✅ |
-| View reports | ❌ | ✅ Own performance | ✅ System-wide |
-| Export data | ❌ | ✅ Limited | ✅ Full |
+| View dashboard | ✅ (Own data) | ✅ (Clients summary) | ✅ (System stats) |
+| Manage Products | ❌ Read only | ❌ Read only | ✅ CRUD |
+| Manage Plans | ❌ Read only | ❌ Read only | ✅ CRUD |
+| View Policies | ✅ Own (`/my`) | ✅ All | ✅ All |
+| Purchase Policy | ✅ Yes (`/purchase`) | ❌ | ❌ |
+| Issue Policy | ❌ | ✅ Yes (`/issue`) | ✅ Yes (`/issue`) |
+| View Payments | ✅ Own (`/my`) | ✅ All | ✅ All |
+| Record Payment | ✅ Yes | ❌ | ✅ Yes |
+| File Claim | ✅ Yes (with files) | ❌ | ❌ |
+| Review Claim | ❌ | ✅ Yes (`/review`) | ❌ |
+| Claim Decision | ❌ | ❌ | ✅ Yes (`/decision`) |
+| Manage Users | ❌ | ❌ | ✅ (Activate/Deactivate, Create Agent) |
 
 ---
 
-## 6. Navigation Flow Diagrams
+## 6. API Endpoint Mapping (Corrected Reference)
 
-### 6.1 User Journey — Buy a Policy
-
-```
-Login → User Dashboard
-  → Products Screen (browse categories)
-    → Plans Screen (compare plans under a product)
-      → Plan Detail Modal (review coverage)
-        → Buy Now → Policyholder Details Form
-          → Premium Summary + Payment Screen
-            → Payment Gateway → Success
-              → Policy Issued → Email confirmation
-                → Redirected to My Policies
-```
-
-### 6.2 User Journey — Raise a Claim
-
-```
-User Dashboard → My Claims
-  → [+ Raise Claim]
-    → Select Policy → Claim Type → Incident Details
-      → Upload Documents → Review & Submit
-        → Claim ID Generated → Status: PENDING
-          → Agent Notified → Admin Review
-            → Decision (Approve / Reject / Request more info)
-              → User Notified (email + in-app)
-                → If Approved: Settlement processed → Claim History updated
-```
-
-### 6.3 Admin Journey — Process a Claim
-
-```
-Admin Dashboard → Claims → [Flagged / Pending filter]
-  → Open Claim Detail
-    → Review documents, policyholder info, plan coverage
-      → Add internal notes
-        → [Approve with amount] / [Reject with reason] / [Request Documents]
-          → Status updated → User + Agent notified
-            → If Approved: trigger settlement workflow
-              → Claim History updated
-```
-
----
-
-## 7. API Endpoint Mapping (Design Reference)
-
-| Screen | Method | Endpoint |
-|---|---|---|
-| Products list | GET | `/api/products` |
-| Product detail | GET | `/api/products/{id}` |
-| Plans by product | GET | `/api/products/{id}/plans` |
-| Plan detail | GET | `/api/plans/{id}` |
-| Policies list (user) | GET | `/api/policies?userId={id}` |
-| Policy detail | GET | `/api/policies/{id}` |
-| Issue policy | POST | `/api/policies` |
-| Renew policy | PUT | `/api/policies/{id}/renew` |
-| Payments list | GET | `/api/payments?userId={id}` |
-| Make payment | POST | `/api/payments` |
-| Payment receipt | GET | `/api/payments/{id}/receipt` |
-| Claims list | GET | `/api/claims?userId={id}` |
-| Raise claim | POST | `/api/claims` |
-| Claim detail | GET | `/api/claims/{id}` |
-| Update claim | PUT | `/api/claims/{id}` |
-| Approve claim | PUT | `/api/claims/{id}/approve` |
-| Reject claim | PUT | `/api/claims/{id}/reject` |
-| Claim history | GET | `/api/claims/history?userId={id}` |
-| User dashboard | GET | `/api/dashboard/user/{id}` |
-| Agent dashboard | GET | `/api/dashboard/agent/{id}` |
-| Admin dashboard | GET | `/api/dashboard/admin` |
+| Category | HTTP Method | Endpoint | Description |
+|---|---|---|---|
+| **Auth** | `POST` | `/api/auth/register` | Register customer |
+| **Auth** | `POST` | `/api/auth/verify-otp` | Verify email OTP |
+| **Auth** | `POST` | `/api/auth/resend-otp?email={email}` | Resend OTP |
+| **Auth** | `POST` | `/api/auth/login` | Login (returns JWT + role + details) |
+| **Users** | `POST` | `/api/users/agent` | Create agent (Admin) |
+| **Users** | `GET` | `/api/users` | List all users (Admin) |
+| **Users** | `PUT` | `/api/users/{id}/activate` | Activate user (Admin) |
+| **Users** | `PUT` | `/api/users/{id}/deactivate` | Deactivate user (Admin) |
+| **Customers** | `POST` | `/api/customers` | Complete Customer Profile |
+| **Customers** | `GET` | `/api/customers/profile` | Get own customer profile (Customer) |
+| **Customers** | `GET` | `/api/customers/{id}` | Get customer profile by ID (Admin/Agent) |
+| **Customers** | `GET` | `/api/customers` | Get all customers (Admin/Agent) |
+| **Customers** | `PUT` | `/api/customers/{id}` | Update customer profile |
+| **Products** | `GET` | `/api/products` | Get all products |
+| **Products** | `POST` | `/api/products` | Create product (Admin) |
+| **Products** | `PUT` | `/api/products/{id}` | Update product (Admin) |
+| **Products** | `PUT` | `/api/products/{id}/deactivate` | Deactivate product (Admin) |
+| **Plans** | `GET` | `/api/plans` | Get all plans |
+| **Plans** | `GET` | `/api/plans/{id}` | Get plan by ID |
+| **Plans** | `POST` | `/api/plans` | Create plan (Admin) |
+| **Plans** | `PUT` | `/api/plans/{id}` | Update plan (Admin) |
+| **Plans** | `PUT` | `/api/plans/{id}/deactivate` | Deactivate plan (Admin) |
+| **Policies** | `POST` | `/api/policies/purchase` | Purchase policy (Customer) |
+| **Policies** | `POST` | `/api/policies/issue` | Issue policy to customer (Admin/Agent) |
+| **Policies** | `GET` | `/api/policies/my` | Get customer's policies (Customer) |
+| **Policies** | `GET` | `/api/policies` | Get all policies (Admin/Agent) |
+| **Policies** | `GET` | `/api/policies/{id}` | Get policy details |
+| **Policies** | `PUT` | `/api/policies/{id}/cancel` | Cancel policy (Admin/Agent) |
+| **Payments** | `POST` | `/api/payments` | Record payment |
+| **Payments** | `GET` | `/api/payments/my` | Get own payments (Customer) |
+| **Payments** | `GET` | `/api/payments` | Get all payments (Admin/Agent) |
+| **Payments** | `GET` | `/api/payments/policy/{policyId}` | Get payments of a policy |
+| **Claims** | `POST` | `/api/claims` | Submit claim (JSON/Multipart) |
+| **Claims** | `GET` | `/api/claims/my` | Get own claims (Customer) |
+| **Claims** | `GET` | `/api/claims` | Get all claims (Admin/Agent) |
+| **Claims** | `GET` | `/api/claims/{id}` | Get claim details |
+| **Claims** | `PUT` | `/api/claims/{id}/review` | Review claim recommendation (Agent) |
+| **Claims** | `PUT` | `/api/claims/{id}/decision` | Final claim decision (Admin) |
+| **Claim History** | `GET` | `/api/claim-history/{claimId}` | Audit trail of claim states |
 
 ---
 
-## 8. Notification & Alerts System
+## 7. Design Adjustments & Empty States
 
-| Event | Channel | Recipient |
-|---|---|---|
-| Policy issued | Email + In-app | User |
-| Payment success | Email + In-app | User |
-| Payment due (7 days) | Email + In-app | User |
-| Policy expiry (30 days) | Email + In-app | User + Agent |
-| Claim submitted | Email + In-app | User + Agent |
-| Claim status update | Email + In-app | User |
-| Document requested | Email + In-app | User + Agent |
-| Claim approved | Email + In-app | User |
-| Claim rejected | Email + In-app | User + Agent |
-| New user registered | In-app | Admin |
-| High-value claim raised | In-app | Admin |
-
----
-
-## 9. Responsive Design Notes
-
-- **Desktop (≥1280px):** Full sidebar expanded (240px), multi-column grids
-- **Tablet (768–1279px):** Sidebar collapses to icon-only (64px), 2-column grids
-- **Mobile (<768px):** Sidebar becomes bottom nav (5 tabs), single-column stack, modals become full-screen sheets
-
-**Mobile Bottom Nav (User):**
-
-```
-[ Home ] [ Policies ] [ Claims ] [ Payments ] [ Profile ]
-```
-
----
-
-## 10. Empty States
-
-| Screen | Empty State Message | CTA |
-|---|---|---|
-| My Policies | "You don't have any active policies yet." | Browse Products |
-| Payments | "No payment history found." | Make First Payment |
-| My Claims | "No claims filed yet." | Raise a Claim |
-| Claim History | "Your claim history will appear here." | — |
-| Admin Users | "No users match your filters." | Clear Filters |
-| Agent Clients | "No clients assigned yet." | Contact Admin |
-
----
-
-*Document Version: 1.0 | Project: Insurance Policy & Claims Management System | Last Updated: June 2026*
+*   **Responsive Adaptation:** Layout collapses sidebar to a bottom menu or header-hamburger on mobile screens (< 768px).
+*   **Empty State Management:** Appropriate placeholder states when `/my` endpoints return empty pages for policies, payments, or claims.
+*   **Loading & Transitions:** Micro-interactions (hover effect transitions, skeleton loading blocks for dashboard cards) are implemented client-side to maintain a premium feel.

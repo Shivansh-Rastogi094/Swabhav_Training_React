@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const styles = `
@@ -127,7 +127,24 @@ const styles = `
   }
 `;
 
-const Sidebar = ({ title, links }) => {
+const Sidebar = ({ title, userData }) => {
+
+  const links =
+    userData?.role === "CUSTOMER"
+      ? [
+          { label: "Dashboard", path: "/userdashboard" },
+          { label: "Products & Plans", path: "/policy" },
+          { label: "Payments", path: "/payments" },
+          { label: "My Claims", path: "/claims" },
+          { label: "Profile", path: "/profile" }
+        ]
+      : [
+          { label: "Dashboard", path: "/admindashboard" },
+          { label: "Agents", path: "/admin/agents" },
+          { label: "Policies", path: "/admin/policies" },
+          { label: "Claims", path: "/admin/claims" }
+        ];
+
   return (
     <>
       <style>{styles}</style>

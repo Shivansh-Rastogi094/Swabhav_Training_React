@@ -225,12 +225,7 @@ const Dashboard = ({ userData }) => {
   const [totalPayments, setTotalPayments] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
 
-  const adminLinks = [
-    { label: "Dashboard", path: "/admindashboard" },
-    { label: "Agents", path: "/admin/agents" },
-    { label: "Policies", path: "/admin/policies" },
-    { label: "Claims", path: "/admin/claims" },
-  ];
+ 
 
   const fetchDashboardData = async () => {
     try {
@@ -273,7 +268,7 @@ const Dashboard = ({ userData }) => {
     <>
       <style>{styles}</style>
       <div className="dashboard-container">
-        <Sidebar title="Admin Dashboard" links={adminLinks} />
+        <Sidebar title="Admin Dashboard" userData={userData} />
         <div className="main-content">
           <div className="topbar">
             <div className="topbar-logo">🛡️ InsureSpace</div>

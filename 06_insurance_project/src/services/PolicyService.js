@@ -1,29 +1,20 @@
 import api from "../api/api";
 
-export const token ="eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbkBpbnN1cmFuY2UuY29tIiwiaWF0IjoxNzgxNTk4NTMzLCJleHAiOjE3ODE2ODQ5MzN9.VfRV1ctkmIMIHyeuAb6cGgWrwTVbnOR0li3jI4GiFy06eUVq0F5Di7nFHEXdd3-q";
-
-export const readAllPolicies=async()=>{
-    try{
-        
-        const response = await api.get(`policies`,{
-            headers: {
-                Authorization: `Bearer ${token}`,
-            }
-        })
-
-        return response
-    }
-    catch(err){
+export const readAllPolicies = async () => {
+    try {
+        const response = await api.get("policies");
+        return response;
+    } catch (err) {
         console.log(err);
     }
-}
+};
 
-
-export const readMyPolicies=async()=>{
+export const readMyPolicies = async () => {
     try {    
-        const response = await api.get(`policies/my`)
-        return response.data
+        const response = await api.get("policies/my");
+        // console.log(response.data.content);
+        return(response.data.content);
     } catch (error) {
         console.log(error);
     }
-}
+};
