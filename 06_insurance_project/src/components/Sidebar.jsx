@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
-
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 const styles = `
   .sidebar {
     font-family: var(--font-body);
@@ -125,10 +125,40 @@ const styles = `
     opacity: 0.5;
     font-weight: 400;
   }
+
+  .logout-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-button);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sidebar-text);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-bottom: 12px;
+  }
+
+  .logout-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+    color: #ef4444;
+  }
 `;
 
-const Sidebar = ({ title, userData }) => {
+const Sidebar = ({ title }) => {
+  const { userData, logout } = useAuth();
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
   const links =
     userData?.role === "CUSTOMER"
       ? [
@@ -140,6 +170,7 @@ const Sidebar = ({ title, userData }) => {
         ]
       : [
           { label: "Dashboard", path: "/admindashboard" },
+          { label: "Products & Plans", path: "/policy" },
           { label: "Agents", path: "/admin/agents" },
           { label: "Policies", path: "/admin/policies" },
           { label: "Claims", path: "/admin/claims" }
@@ -176,6 +207,9 @@ const Sidebar = ({ title, userData }) => {
         </ul>
 
         <div className="sidebar-footer">
+            <button className="logout-btn" onClick={handleLogout}>
+              Logout
+            </button>
           <p>Insurance Management System</p>
         </div>
       </div>

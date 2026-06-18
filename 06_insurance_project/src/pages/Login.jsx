@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginService } from "../services/AuthService";
+import { useAuth } from "../context/AuthContext";
 
-const Login = ({ setUserData }) => {
+const Login = () => {
   const navigate = useNavigate();
+  const {login} = useAuth();
 
   const [user, setUser] = useState({
     email: "",
@@ -46,11 +48,8 @@ const Login = ({ setUserData }) => {
 
     try {
       const response = await LoginService(user);
-      console.log(response.data);
       
-      setUserData(response.data)
-
-      localStorage.setItem("token", response.data.token);
+      login(response.data)
 
       switch (response.data.role) {
         case "ADMIN":

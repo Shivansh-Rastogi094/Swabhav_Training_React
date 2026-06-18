@@ -6,7 +6,7 @@ import { readAllPolicies } from '../services/PolicyService';
 import { readAllPayments } from '../services/PaymentService';
 import Card from '../components/Card';
 import Sidebar from '../components/Sidebar';
-
+import { useAuth } from '../context/AuthContext';
 const styles = `
   .dashboard-container {
     font-family: var(--font-body);
@@ -216,7 +216,7 @@ const styles = `
     }
   }
 `;
-const Dashboard = ({ userData }) => {
+const Dashboard = () => {
   const [users, setUsers] = useState(0);
   const [claims, setClaims] = useState(0);
   const [products, setProducts] = useState(0);
@@ -225,7 +225,7 @@ const Dashboard = ({ userData }) => {
   const [totalPayments, setTotalPayments] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
 
- 
+ const {userData} = useAuth();
 
   const fetchDashboardData = async () => {
     try {
@@ -246,8 +246,6 @@ const Dashboard = ({ userData }) => {
               0
               );
         
-      console.log(userData);
-      
       setTotalPayments(payments);
       setTotalClaims(claims);
       setUsers(userRes.data.content.length);
@@ -268,7 +266,7 @@ const Dashboard = ({ userData }) => {
     <>
       <style>{styles}</style>
       <div className="dashboard-container">
-        <Sidebar title="Admin Dashboard" userData={userData} />
+        <Sidebar title="Admin Dashboard"/>
         <div className="main-content">
           <div className="topbar">
             <div className="topbar-logo">🛡️ InsureSpace</div>

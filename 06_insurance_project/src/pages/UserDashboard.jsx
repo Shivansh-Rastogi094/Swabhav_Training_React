@@ -4,6 +4,7 @@ import { readMyPolicies } from '../services/PolicyService';
 import Card from '../components/Card';
 import { readMyClaims } from '../services/ClaimService';
 import { readMyPayements } from '../services/PaymentService';
+import { useAuth } from '../context/AuthContext';
 
 const styles = `
   .dashboard-container {
@@ -165,6 +166,28 @@ const styles = `
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+  }
+    .agent-remarks,
+.admin-remarks {
+  max-width: 220px;
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 4px 8px;
+  border-radius: 6px;
+  word-break: break-word;
+}
+
+  .agent-remarks {
+    background: rgba(37, 99, 168, 0.08);
+    color: var(--primary-light);
+    border: 1px solid rgba(37, 99, 168, 0.15);
+  }
+
+  .admin-remarks {
+    background: rgba(22, 163, 74, 0.08);
+    color: var(--success);
+    border: 1px solid rgba(22, 163, 74, 0.15);
   }
 
   .card-header h4 {
@@ -463,21 +486,13 @@ const styles = `
   }
 `;
 
-const userLinks = [
-  { label: "Dashboard", path: "/userdashboard" },
-  { label: "Products & Plans", path: "/policy" },
-  { label: "Payments", path: "/payments" },
-  { label: "My Claims", path: "/claims" },
-  { label: "Profile", path: "/profile" }
-];
-
-const UserDashboard = ({ userData }) => {
+const UserDashboard = () => {
   const [policy, setPolicy] = useState([]);
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
   // const [plans, setPlans] = useState([]);
 
-
+  const {userData} = useAuth();
   const myPolicies = async () => {
     try {
       const response = await readMyPolicies();    
@@ -519,22 +534,21 @@ const UserDashboard = ({ userData }) => {
   const pendingClaimsCount = claims.filter(c => (c.claimStatus) === "SUBMITTED").length;
   
   
-const totalPremiumPaidVal = payments.reduce(
-  (sum, p) => p.paymentStatus === "SUCCESS" ? sum + p.amount : sum,
-  0
-);
+  const totalPremiumPaidVal = payments.reduce(
+    (sum, p) => p.paymentStatus === "SUCCESS" ? sum + p.amount : sum,
+    0
+  );
 
-  
   const totalClaimAvailableVal = policy.reduce(
-  (sum, p) => p.policyStatus === "ACTIVE" ? sum + p.coverageAmount : sum,
-  0
-);
+    (sum, p) => p.policyStatus === "ACTIVE" ? sum + p.coverageAmount : sum,
+    0
+  );
 
   return (
     <>
       <style>{styles}</style>
       <div className="dashboard-container">
-        <Sidebar title="Policyholder Portal" userData={userData} />
+        <Sidebar title="Policyholder Portal" />
         
         <div className="main-content">
           <div className="topbar">
@@ -552,7 +566,7 @@ const totalPremiumPaidVal = payments.reduce(
               <h2>Good Morning, {userData?.fullName} 👋</h2>
               <p>Welcome back to your dashboard. Here is your policy health-check.</p>
             </div>
-            <button className="btn-primary">+ Buy Policy</button>
+            <button className="btn-primary">Explore Policies</button>
           </div>
 
           <div className="divider" />
@@ -575,23 +589,19 @@ const totalPremiumPaidVal = payments.reduce(
               </div>
               <div className="compact-policy-list">
                 {policy.slice(0, 3).map((p, index) => {
-                  const rawStatus = p.status || p.policyStatus || "ACTIVE";
+                  const rawStatus =  p.policyStatus;
                   const statusLabel = rawStatus === "PENDING_PAYMENT" ? "Inactive" : rawStatus.toLowerCase();
                   const badgeClass = rawStatus === "PENDING_PAYMENT" ? "expired" : rawStatus.toLowerCase();
-                  const actionText = rawStatus === "PENDING_PAYMENT" ? "Pay Now" : (rawStatus === "EXPIRED" ? "Rebuy" : "Renew");
                   return (
                     <div className="compact-policy-card" key={p.id || p.policyId || index}>
                       <div className="policy-info">
-                        <h5>{p.planName || p.plan?.planName || "Insurance Plan"}</h5>
-                        <p>{p.type || p.plan?.product?.categoryName || "General Cover"} • ID: {p.id || p.policyId}</p>
+                        <h5>{p.planName}</h5>
+                        <p>{p.productType} • {p.policyNumber}</p>
                       </div>
                       <div className="policy-meta">
                         <span className={`status-badge ${badgeClass}`}>
                           {statusLabel}
                         </span>
-                        <button className="btn-outline">
-                          {actionText}
-                        </button>
                       </div>
                     </div>
                   );
@@ -599,39 +609,46 @@ const totalPremiumPaidVal = payments.reduce(
               </div>
             </div>
 
-            {/* Recent Claims Column */}
             <div className="dashboard-section">
               <div className="section-header">
                 <span className="section-title">Recent Claims</span>
                 <button className="text-btn">View All</button>
               </div>
               <div className="claims-list">
-                {claims.slice(0, 3).map((c, index) => {
-                  const status = (c.claimStatus || c.status || "PENDING").toLowerCase();
-                  const claimNum = c.claimNumber || c.id || `CLM-2026-${String(index + 1).padStart(5, '0')}`;
-                  const assocPolicy = c.policy?.plan?.planName || c.policyName || (c.policyId ? `Policy ID: ${c.policyId}` : "");
+                {claims.slice(0, 2).map((c, index) => {
+                  const status = (c.claimStatus).toLowerCase();
+                  const claimNum = c.claimNumber;
+                  const assocPolicy = c.policyNumber ;
+                  const agentRemarks = c.agentRemarks ==="null" ? "Pending" : c.agentRemarks
+                  const adminRemarks = c.adminRemarks ==="null" ? "Pending" : c.adminRemarks
                   return (
                     <div className="claim-row" key={c.id || index}>
                       <div className="claim-info">
-                        <h5>No: {claimNum}</h5>
+                        <h5>{claimNum}</h5>
                         {assocPolicy && (
                           <p style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '12px', marginTop: '2px' }}>
                             {assocPolicy}
                           </p>
                         )}
                         <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Type: {c.claimType || "General"} • Date: {c.claimDate || c.incidentDate || "Recent"}
+                        Date: {c.incidentDate || "Recent"}
                         </p>
-                        {(c.description || c.claimReason || c.reason) && (
+                        {(c.claimReason) && (
                           <p className="claim-desc" style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                            "{c.description || c.claimReason || c.reason}"
+                            Reason: {c.claimReason }
                           </p>
                         )}
                       </div>
                       <div className="claim-meta">
-                        <span className="claim-amount">₹{(c.claimAmount || 0).toLocaleString('en-IN')}</span>
+                        <span className="claim-amount">₹{(c.claimAmount).toLocaleString('en-IN')}</span>
                         <span className={`status-badge ${status}`}>
                           {status}
+                        </span>
+                       <span className="agent-remarks">
+                          Agent: {agentRemarks || "No remarks"}
+                        </span>
+                        <span className="admin-remarks">
+                          Admin: {adminRemarks || "No remarks"}
                         </span>
                       </div>
                     </div>
