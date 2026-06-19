@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import { readMyClaims } from '../services/ClaimService';
 import { readMyPayements } from '../services/PaymentService';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const styles = `
   .dashboard-container {
@@ -493,6 +494,7 @@ const UserDashboard = () => {
   // const [plans, setPlans] = useState([]);
 
   const {userData} = useAuth();
+  const navigate = useNavigate();
   const myPolicies = async () => {
     try {
       const response = await readMyPolicies();    
@@ -566,7 +568,7 @@ const UserDashboard = () => {
               <h2>Good Morning, {userData?.fullName} 👋</h2>
               <p>Welcome back to your dashboard. Here is your policy health-check.</p>
             </div>
-            <button className="btn-primary">Explore Policies</button>
+            <button className="btn-primary" onClick={()=>{navigate("/policy")}}>Explore Policies</button>
           </div>
 
           <div className="divider" />
